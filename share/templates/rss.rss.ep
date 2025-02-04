@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0">
+<channel>
+<title><%== title %></title>
+<link><%== stash('url_base') %></link>
+<description>How can I be sad when I have breakfast, lunch, and dinner?</description>
+<lastBuildDate><%= $updates->[0]{datetime} %></lastBuildDate>
+
+% for my $update (@$updates) {
+<item>
+<title><%== $update->{title} %></title>
+<link><%== stash('url_base') %>/entry/<%= $update->{id} %></link>
+<guid><%== stash('url_base') %>/entry/<%= $update->{id} %></guid>
+<pubDate><%= $update->{datetime} %></pubDate>
+<description><![CDATA[<%== $update->{content} %>]]></description>
+</item>
+% }
+
+</channel>
+</rss>

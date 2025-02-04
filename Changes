@@ -1,0 +1,18 @@
+## Currently on version 0.31
+
+## 0.31
+* Added list-unpublished option for mojo-blog script
+* Make it so publishing an entry updates timestamp
+
+## 0.25
+* Added prev and next entry metadata when viewing a single blog post
+
+## 0.24
+* Updated mojo-blog script so you can add tags without specifying all of them
+
+## 0.23
+* Added a basic search feature
+
+## 0.22
+* Made it so you can specify a title name before writing a new blog post
+* Removed a warning that would show up when you tried to edit a published post

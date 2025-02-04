@@ -1,0 +1,8 @@
+Makefile.PL
+MANIFEST
+lib/Mojolicious/Plugin/Blog.pm
+lib/Mojolicious/Plugin/Blog/Controller/Blog.pm
+lib/Blog.pm
+lib/Input.pm
+bin/mojo-blog
+share/templates/rss.rss.ep

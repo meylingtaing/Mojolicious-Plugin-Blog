@@ -1,0 +1,224 @@
+#!/usr/bin/env perl
+use strict;
+use warnings;
+
+use lib 'lib';
+
+use Input;
+use DBI;
+use File::Temp qw(tempfile);
+use Text::ParseWords;
+
+# TODO: Add a --help option so I know what all the options are
+
+# TODO: Be able to read from a config file instead of specifying "food"
+my $db = "Blog";
+if ($ARGV[0] && $ARGV[0] eq 'food') {
+    shift @ARGV;
+    $db = 'Food';
+}
+
+my $command = (shift @ARGV) || '';
+my $dbh = DBI->connect("DBI:SQLite:dbname=db/$db.sqlite");
+$dbh->{sqlite_unicode} = 1;
+
+# If we're given input piped in, use that as the default file content
+my $content = '';
+if (! -t STDIN) {
+    my @lines = <STDIN>;
+    close STDIN;
+    open STDIN, '<', '/dev/tty';
+    $content = join "", @lines;
+}
+
+my ($id, $sth, $title);
+my $published = 0;
+my @tags;
+
+my $edit_content = 1;
+
+# There are two "edit" commands:
+# edit: for editing a previous entry
+# edit-tags: for only editing the metadata of a previous entry
+if ($command =~ /^edit/) {
+
+    # If we're given an ID, look it up, else just use the latest update
+    my @row;
+    $id = $ARGV[0];
+    if ($id) {
+        @row = $dbh->selectall_array(
+            "select id, content, title, published from Updates " .
+            "where id = ?",
+            {}, $id
+        );
+    }
+    else {
+        @row = $dbh->selectall_array(
+            "select id, content, title, published from Updates " .
+            "order by time_stamp desc limit 1"
+        );
+    }
+
+    if (scalar @row) {
+        $id        = $row[0]->[0];
+        $content   = $row[0]->[1];
+        $title     = $row[0]->[2];
+        $published = $row[0]->[3];
+    }
+    else {
+        die "Can't find entry for id '$id'!";
+    }
+
+    if ($command eq 'edit-tags') {
+        $edit_content = 0;
+    }
+}
+elsif ($command eq 'list-unpublished') {
+    my @entries = $dbh->selectall_array(
+        "select id, title from Updates where published = 0",
+        { Slice => {} }
+    );
+    print "Unpublished entries:\n";
+    for my $entry (@entries) {
+        print "$entry->{id}) $entry->{title}\n";
+    }
+    exit;
+}
+elsif ($command ne '') {
+    $title = $command;
+}
+
+@tags = map { $_->[0] } $dbh->selectall_array(
+    "select label from Tags join UpdateTags " .
+    "on UpdateTags.tag_id = Tags.id " .
+    "where update_id = $id"
+) if $id;
+
+if ($edit_content) {
+    my ($fh, $filename) = tempfile("update-XXXX",
+        DIR    => 'tmp',
+        SUFFIX => '.txt',
+    );
+
+    # Save the temp file to the database
+    if ($id) {
+        $sth = $dbh->prepare("update Updates set temp_file = ? where id = ?");
+        $sth->bind_param(1, $filename);
+        $sth->bind_param(2, $id);
+        $sth->execute;
+    }
+    else {
+        $sth = $dbh->prepare(
+            "insert into Updates (title, temp_file, time_stamp) " .
+            "values (?, ?, datetime('now', 'localtime'))");
+        $sth->bind_param(1, $title || "New Blog Post...");
+        $sth->bind_param(2, $filename);
+        $sth->execute;
+        $id = $dbh->sqlite_last_insert_rowid;
+    }
+
+    $content = Input::via_editor($content, $filename);
+}
+
+# If we have no content, just quit
+chomp $content;
+unless ($content) {
+
+    # Remove the entry from the database
+    unless ($command =~ /^edit/) {
+        $dbh->do(qq{
+            delete from Updates where id = ? and temp_file is not null
+        }, undef, $id);
+    }
+    exit;
+}
+
+# Let's add a title too
+print "Title";
+print " ($title)" if $title;
+print ": ";
+my $new_title = <STDIN>;
+chomp $new_title;
+$title = $new_title if $new_title;
+
+# And also be able to add some tags
+print "Tags (@tags): ";
+my $new_tag_str = <STDIN>;
+chomp $new_tag_str;
+my @new_tags = parse_line('\s+', 0, $new_tag_str);
+if (@new_tags) {
+    print "Overwrite all tags? ";
+    my $overwrite = <STDIN>;
+    chomp $overwrite;
+    if ($overwrite ne 'y') {
+        @new_tags = (@tags, @new_tags);
+    }
+}
+
+# And ask if we want it published
+my $publish;
+my $overwrite_timestamp = 0;
+if ($published) {
+    print "Overwrite timestamp? ";
+    my $input = <STDIN>;
+    chomp $input;
+    $overwrite_timestamp = 1 if $input eq 'y';
+}
+else {
+    print "Type y to publish: ";
+    $publish = <STDIN>;
+    chomp $publish;
+    if ($publish ne 'y') {
+        print "Not publishing.\n";
+    }
+    else {
+        print "Publishing!\n";
+        $overwrite_timestamp = 1;
+        $published = 1;
+    }
+}
+
+# Save it to the database
+my $update_sql =
+    "update Updates set content = ?, title = ?, temp_file = NULL";
+$update_sql .= ", time_stamp = datetime('now', 'localtime')"
+    if !$published || $overwrite_timestamp;
+$update_sql .= ", published = 1" if $published;
+
+$sth = $dbh->prepare("$update_sql where id = ?");
+$sth->bind_param(1, $content);
+$sth->bind_param(2, $title);
+$sth->bind_param(3, $id);
+$sth->execute;
+
+if (@new_tags) {
+
+    # Get all available tags
+    my %available_tags = map { $_->[0] => $_->[1] }
+        @{ $dbh->selectall_arrayref("select label, id from Tags") };
+
+    $sth = $dbh->prepare("delete from UpdateTags where update_id = ?");
+    $sth->bind_param(1, $id);
+    $sth->execute;
+
+    my $insert_sth = $dbh->prepare(
+        "insert into UpdateTags (update_id, tag_id) values (?, ?)");
+    $insert_sth->bind_param(1, $id);
+
+    for my $label (@new_tags) {
+        # Check if the tag exists first
+        my $tag_id = $available_tags{$label};
+        unless ($tag_id) {
+            # XXX: CONFIRM...also move confirm helper somewhere
+            $sth = $dbh->prepare("insert into Tags (label) values (?)");
+            $sth->bind_param(1, $label);
+            $sth->execute;
+            $tag_id = $dbh->sqlite_last_insert_rowid;
+        }
+
+        $insert_sth->bind_param(2, $tag_id);
+        $insert_sth->execute;
+    }
+}
+
+print "Added/updated entry $id\n";

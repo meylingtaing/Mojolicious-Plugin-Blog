@@ -4,6 +4,8 @@ A while back, I wrote some code to help me write blog posts for my
 various sites. I don't remember how it all works. Maybe I'll figure it
 out again though.
 
+See the notes.md file in the top level of the repo for more explanation
+
 The rest of this documentation is regular POD stuff that was probably
 copy-pasted or generated automatically?
 

@@ -28,27 +28,11 @@ Expects C<id>, C<db>, and C<template> in the stash.
 
 sub blog_entry {
     my $c = shift;
+    $c->_blog_entry(id => $c->stash('id'));
 
-    my $id = $c->stash('id');
-    my $blog = Blog->new($c->stash('db'));
-    my $update = $blog->get_entry($id);
 
-    ($update->{content}) = $c->_enhance_content($update->{content});
 
-    my $next_entry = $blog->get_next_entry_metadata(
-        id => $update->{id},
-        timestamp => $update->{time_stamp}
-    );
-    my $prev_entry = $blog->get_prev_entry_metadata(
-        id => $update->{id},
-        timestamp => $update->{time_stamp}
-    );
 
-    $c->stash(next_entry => $next_entry);
-    $c->stash(prev_entry => $prev_entry);
-
-    $c->stash(update => $update);
-    $c->render(template => $c->stash('template'));
 }
 
 =head2 search
@@ -90,6 +74,36 @@ sub rss {
 }
 
 =head1 INTERNALS
+
+=head2 _blog_entry
+
+=cut
+
+sub _blog_entry {
+    my ($c, %params) = @_;
+
+    my $id = $params{id};
+
+    my $blog = Blog->new($c->stash('db'));
+    my $update = $blog->get_entry($id);
+
+    ($update->{content}) = $c->_enhance_content($update->{content});
+
+    my $next_entry = $blog->get_next_entry_metadata(
+        id => $update->{id},
+        timestamp => $update->{time_stamp}
+    );
+    my $prev_entry = $blog->get_prev_entry_metadata(
+        id => $update->{id},
+        timestamp => $update->{time_stamp}
+    );
+
+    $c->stash(next_entry => $next_entry);
+    $c->stash(prev_entry => $prev_entry);
+
+    $c->stash(update => $update);
+    $c->render(template => $c->stash('template'));
+}
 
 =head2 _stash_blog_entries
 

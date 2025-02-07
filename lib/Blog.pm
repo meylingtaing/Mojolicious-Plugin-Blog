@@ -271,6 +271,26 @@ sub get_entry {
     return $entry;
 }
 
+=head2 get_random_entry
+
+Takes no parameters and returns a hashref similar to L</get_entry>
+
+=cut
+
+sub get_random_entry {
+    my $self = shift;
+
+    my $entry = $self->{dbh}->selectrow_hashref(qq{
+        select id, time_stamp, content, title
+        from Updates
+        order by RANDOM() limit 1
+    });
+
+    $self->_modify_entry_hash_for_view($entry);
+
+    return $entry;
+}
+
 =head1 INTERNALS
 
 =cut

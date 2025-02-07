@@ -22,17 +22,24 @@ sub blog {
 
 =head2 blog_entry
 
-Expects C<id>, C<db>, and C<template> in the stash.
+Expects C<id>, C<db>, and C<template> in the stash
 
 =cut
 
 sub blog_entry {
     my $c = shift;
     $c->_blog_entry(id => $c->stash('id'));
+}
 
+=head2 random_blog_entry
 
+Expects C<db> and C<template> in the stash
 
+=cut
 
+sub random_blog_entry {
+    my $c = shift;
+    $c->_blog_entry(random => 1);
 }
 
 =head2 search
@@ -77,15 +84,25 @@ sub rss {
 
 =head2 _blog_entry
 
+Helper for getting all the stuff needed to display a single blog entry. Expects
+either C<id> or C<random> to be passed as a parameter, and both C<db> and
+C<template> should already be stashed
+
 =cut
 
 sub _blog_entry {
     my ($c, %params) = @_;
 
-    my $id = $params{id};
+    # One of these must be specified
+    my $id     = $params{id};
+    my $random = $params{random};
 
     my $blog = Blog->new($c->stash('db'));
-    my $update = $blog->get_entry($id);
+
+    my $update =
+        $id     ? $blog->get_entry($id)   :
+        $random ? $blog->get_random_entry :
+                  die "Must provide id or random to _blog_entry";
 
     ($update->{content}) = $c->_enhance_content($update->{content});
 

@@ -1,4 +1,8 @@
-## Currently on version 0.31
+## Currently on version 0.33
+
+## 0.33
+* SQL errors will now raise an exception
+* Added a route for viewing a random entry
 
 ## 0.32
 * The title is now included in searches

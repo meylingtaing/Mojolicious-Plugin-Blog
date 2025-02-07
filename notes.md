@@ -21,6 +21,8 @@ And to add it to pinto, (huh, I forget what the deal is with URI::_generic)
 
 And make sure to deploy it to the web server somehow
 
+I suppose if you want an older version, you can find the commit that set that version.
+
 # What are all the files?
 
 * All of the perl modules are under `lib/`,

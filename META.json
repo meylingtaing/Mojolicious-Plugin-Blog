@@ -65,7 +65,7 @@
          "web" : "https://github.com/meylingtaing/Mojolicious-Plugin-Blog"
       }
    },
-   "version" : "0.31",
+   "version" : "0.32",
    "x_contributors" : [
       "Kirsten Taing <meylingtaing@gmail.com>"
    ],

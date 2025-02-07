@@ -1,5 +1,8 @@
 ## Currently on version 0.31
 
+## 0.32
+* The title is now included in searches
+
 ## 0.31
 * Added list-unpublished option for mojo-blog script
 * Make it so publishing an entry updates timestamp

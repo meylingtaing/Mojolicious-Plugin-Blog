@@ -22,8 +22,12 @@ Blog
 sub new {
     my $class = shift;
 
-    my $dbh = DBI->connect("DBI:SQLite:dbname=" . shift)
-        or die $DBI::errstr;
+    my $dbh = DBI->connect("DBI:SQLite:dbname=" . shift,
+        undef, # username
+        undef, # password
+        { RaiseError => 1 }
+    ) or die $DBI::errstr;
+
     $dbh->{sqlite_unicode} = 1;
 
     my $self = { dbh => $dbh };

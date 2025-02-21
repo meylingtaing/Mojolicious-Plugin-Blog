@@ -1,0 +1,88 @@
+#!/usr/bin/env perl
+use strict;
+use warnings;
+
+use lib 'lib';
+
+use Input;
+use DBI;
+
+my $db_file = 'db/Blog.sqlite';
+
+# For now I'll just expect that if there's a conf file, that you're running
+# this script in the same directory as that file. Maybe I'll make this more
+# robust in the future
+my $conf_file = './app.conf';
+
+if (-f $conf_file) {
+    my $conf = do $conf_file;
+    die "couldn't parse $conf_file: $@" if $@;
+
+    $db_file = $conf->{blog_db_file};
+    die "couldn't read blog_db_file conf value" unless $db_file;
+}
+
+# Now make sure the blog database file exists too
+die "$db_file does not exist!" unless -f $db_file;
+
+# And connect!
+my $dbh = DBI->connect("DBI:SQLite:dbname=$db_file",
+    undef, # username
+    undef, # password
+    { RaiseError => 1 }
+) or die $DBI::errstr;
+
+$dbh->{sqlite_unicode} = 1;
+
+print "Connected to database $db_file\n\n";
+
+# Find tags that don't link to any blog posts
+my @unused_tags = $dbh->selectall_array(qq{
+    SELECT Tags.id, label
+    FROM Tags
+    LEFT JOIN UpdateTags ON UpdateTags.tag_id = Tags.id
+    WHERE UpdateTags.tag_id IS NULL
+}, { Slice => {} });
+
+
+if (@unused_tags) {
+    print "Unused tags:\n";
+    for my $tag (@unused_tags) {
+        print "\t$tag->{id}) $tag->{label}\n";
+    }
+
+    print "Deleting " . @unused_tags . " unused tags...\n";
+
+    # Make sure to get user confirmation before deleting
+    if (Input::confirm()) {
+
+        # sqlite doesn't allow delete with join, so I'm explicitly including
+        # all the ids here. The ? placeholder string logic feels a bit clunky,
+        # not sure if there's a better way
+        my $placeholder = join(",", (map "?", @unused_tags));
+        my @ids = map $_->{id}, @unused_tags;
+
+        my $rows_deleted = $dbh->do(qq{
+            DELETE FROM Tags
+            WHERE id IN ($placeholder)
+        }, undef, @ids);
+        print "$rows_deleted rows were deleted!\n";
+    }
+}
+
+# Find duplicated tags
+my @duplicates = $dbh->selectall_array(qq{
+    SELECT label, GROUP_CONCAT(id) all_ids
+    FROM Tags
+    GROUP BY label
+    HAVING COUNT(id) > 1
+});
+
+if (@duplicates) {
+    print "Duplicated tags:\n";
+    for my $tag (@duplicates) {
+        print "\t$tag->{label} - $tag->{all_ids}\n";
+    }
+}
+
+# TODO: Actually be able to automatically remove duplicates

@@ -1,4 +1,8 @@
-## Currently on version 0.33
+## Currently working on version 0.34
+
+## 0.34
+* mojo-blog script now has a 'list-tags' option
+* I've added another script specifically for cleaning tags. It is unfinished
 
 ## 0.33
 * SQL errors will now raise an exception

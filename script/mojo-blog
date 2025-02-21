@@ -11,16 +11,34 @@ use Text::ParseWords;
 
 # TODO: Add a --help option so I know what all the options are
 
-# TODO: Be able to read from a config file instead of specifying "food"
-my $db = "Blog";
-if ($ARGV[0] && $ARGV[0] eq 'food') {
-    shift @ARGV;
-    $db = 'Food';
+# TODO: This is both here and in tag-cleanup, so consolidate them somehow
+my $db_file = 'db/Blog.sqlite';
+
+# For now I'll just expect that if there's a conf file, that you're running
+# this script in the same directory as that file. Maybe I'll make this more
+# robust in the future
+my $conf_file = './app.conf';
+
+if (-f $conf_file) {
+    my $conf = do $conf_file;
+    die "couldn't parse $conf_file: $@" if $@;
+
+    $db_file = $conf->{blog_db_file};
+    die "couldn't read blog_db_file conf value" unless $db_file;
 }
 
-my $command = (shift @ARGV) || '';
-my $dbh = DBI->connect("DBI:SQLite:dbname=db/$db.sqlite");
+# Now make sure the blog database file exists too
+die "$db_file does not exist!" unless -f $db_file;
+
+# And connect!
+my $dbh = DBI->connect("DBI:SQLite:dbname=$db_file",
+    undef, # username
+    undef, # password
+    { RaiseError => 1 }
+) or die $DBI::errstr;
+
 $dbh->{sqlite_unicode} = 1;
+
 
 # If we're given input piped in, use that as the default file content
 my $content = '';
@@ -40,6 +58,7 @@ my $edit_content = 1;
 # There are two "edit" commands:
 # edit: for editing a previous entry
 # edit-tags: for only editing the metadata of a previous entry
+my $command = (shift @ARGV) || '';
 if ($command =~ /^edit/) {
 
     # If we're given an ID, look it up, else just use the latest update

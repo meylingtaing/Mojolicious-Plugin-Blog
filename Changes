@@ -3,6 +3,8 @@
 ## 0.34
 * mojo-blog script now has a 'list-tags' option
 * I've added another script specifically for cleaning tags. It is unfinished
+* the mojo-blog script no longer has weird logic for getting the food blog
+  database, it now reads it from the app.conf file
 
 ## 0.33
 * SQL errors will now raise an exception

@@ -7,6 +7,7 @@ use lib 'lib';
 use Input;
 use DBI;
 
+# TODO: This is both here and in tag-cleanup, so consolidate them somehow
 my $db_file = 'db/Blog.sqlite';
 
 # For now I'll just expect that if there's a conf file, that you're running

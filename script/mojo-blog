@@ -84,6 +84,17 @@ elsif ($command eq 'list-unpublished') {
     }
     exit;
 }
+elsif ($command eq 'list-tags') {
+    my @tags = $dbh->selectall_array(
+        "select id, label from Tags",
+        { Slice => {} }
+    );
+    print "Tags:\n";
+    for my $tag (@tags) {
+        print "$tag->{id}) $tag->{label}\n";
+    }
+    exit;
+}
 elsif ($command ne '') {
     $title = $command;
 }

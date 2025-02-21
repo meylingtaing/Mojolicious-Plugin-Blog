@@ -1,3 +1,5 @@
 *.swp
 *.tar.gz
 Makefile
+local/
+cpanfile.snapshot

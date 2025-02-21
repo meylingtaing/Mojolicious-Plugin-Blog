@@ -43,4 +43,34 @@ sub via_editor {
     return $content;
 }
 
+=head2 from_prompt
+
+Displays the given string, which should prompt the user for input. This returns
+the user's input
+
+=cut
+
+sub from_prompt {
+    my $prompt = shift;
+    print "$prompt ";
+    my $input = <STDIN>;
+    chomp $input;
+    return $input;
+}
+
+=head2 confirm
+
+Asks the user for a yes/no response. This returns true if whatever the user
+entered starts with a 'y'
+
+=cut
+
+sub confirm {
+    print "Is this okay? ";
+    my $yesno = <STDIN>;
+    chomp $yesno;
+    return 1 if substr($yesno, 0, 1) eq 'y';
+    return 0;
+}
+
 1;

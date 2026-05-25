@@ -1,5 +1,9 @@
 ## Currently working on version 0.34
 
+## 0.35
+* tooltip was added to `_enhance_content`. Honestly, this belongs in the food
+  blog repo, but I'm too lazy to properly add it now
+
 ## 0.34
 * mojo-blog script now has a 'list-tags' option
 * I've added another script specifically for cleaning tags. It is unfinished

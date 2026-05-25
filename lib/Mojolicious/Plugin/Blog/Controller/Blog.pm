@@ -207,6 +207,9 @@ sub _enhance_content {
              <\/div>/mxgs;
     }
 
+    # Look for <tooltip> and convert
+    $content =~ s/<tooltip "(.*?)">(.*?)<\/tooltip>/<span class="tooltip-hover">$2<span class="tooltip">$1<\/span><\/span>/mgs;
+
     # Wrap code blocks in a div
     $content =~
         s/<code>(.*?)<\/code>

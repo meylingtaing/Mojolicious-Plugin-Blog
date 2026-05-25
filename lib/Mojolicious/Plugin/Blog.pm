@@ -4,7 +4,7 @@ use Mojo::File qw(curfile);
 use Path::Tiny;
 use File::Share;
 
-our $VERSION = '0.34';
+our $VERSION = '0.35';
 
 sub register {
     my ($self, $app) = @_;

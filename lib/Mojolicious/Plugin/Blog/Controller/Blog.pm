@@ -179,6 +179,10 @@ sub _enhance_content {
     my ($c, $content, %params) = @_;
     my $truncate = $params{truncate};
     my $rss      = $params{rss};
+
+    my $pre_process  = $c->stash('process_pre_markdown');
+    my $post_process = $c->stash('process_post_markdown');
+
     my $truncated;
 
     # XXX: Make it so the links open up in a new tab
@@ -188,6 +192,12 @@ sub _enhance_content {
     }
     else {
         $content =~ s/<pagebreak>\n//g;
+    }
+
+    if ($pre_process) {
+        $content = $pre_process->(
+            $content, truncate => $truncate, rss => $rss
+        );
     }
 
     # Look for <image $url> and convert that to special link
@@ -207,9 +217,6 @@ sub _enhance_content {
              <\/div>/mxgs;
     }
 
-    # Look for <tooltip> and convert
-    $content =~ s/<tooltip "(.*?)">(.*?)<\/tooltip>/<span class="tooltip-hover">$2<span class="tooltip">$1<\/span><\/span>/mgs;
-
     # Wrap code blocks in a div
     $content =~
         s/<code>(.*?)<\/code>
@@ -217,12 +224,11 @@ sub _enhance_content {
 
     $content = markdown($content, { img_ids => 0 });
 
-    # Add captions to images. This'll be...hack-y
-    my $subs = ($content =~
-        s/<p>(<img\ src=.*?)<\/p>\n\n   # Look for img tag
-          <p>\^\ (.*?)<\/p>             # with the next section starting with ^
-         /<figure>$1<figcaption><em>$2<\/em><\/figcaption><\/figure><p><\/p>
-         /mgx);
+    if ($post_process) {
+        $content = $post_process->(
+            $content, truncate => $truncate, rss => $rss
+        );
+    }
 
     return ($content, $truncated);
 }

@@ -185,6 +185,7 @@ sub get_entries_for_rss {
     for my $row (@rows) {
         my $datetime = str2time(delete $row->{time_stamp});
         $row->{datetime} = time2str("%a, %d %b %Y %T +0000", $datetime);
+        $row->{simplified_date} = time2str("%L/%e", $datetime);
     }
 
     return \@rows;

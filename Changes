@@ -1,5 +1,8 @@
 ## Currently working on version 0.34
 
+## 0.36
+* added a `simplified_date` value that I can use in the RSS feed content
+
 ## 0.35
 * tooltip was added to `_enhance_content`. Honestly, this belongs in the food
   blog repo, but I'm too lazy to properly add it now
